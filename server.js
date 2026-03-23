@@ -12,7 +12,7 @@ app.get('/', (req, res) => {
   // req = Request (what the client sent)
   // res = Response (what we send back)
   res.status(200).json({
-    message: "Welcome to my first production API!",
+    message: "Welcome to my first production API! You have finally installed Nodemon",
     status: "Success"
   });
 });
