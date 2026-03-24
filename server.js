@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 // 1. Import the express library
 const express = require('express');
 
@@ -5,7 +7,7 @@ const express = require('express');
 const app = express();
 
 // 3. Define a "Port" (The door the server listens on)
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 const bookData = {
   "name": "The way of Kings",
@@ -33,6 +35,13 @@ app.get('/book', (req, res) => {
 app.get('/admin', (req, res) => {
   res.status(403).json("Access Denied")
 })
+
+app.get('/config', (req, res) => {
+  res.json({
+    port_used: PORT,
+    message: "Secrets are safe!"
+  });
+});
 
 // 5. Start the server
 app.listen(PORT, () => {
