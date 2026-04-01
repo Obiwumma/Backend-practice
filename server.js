@@ -9,6 +9,9 @@ const app = express();
 // 3. Define a "Port" (The door the server listens on)
 const PORT = process.env.PORT || 3000;
 
+// Built-in Middleware to handle JSON data from clients
+app.use(express.json());
+
 const bookData = {
   "name": "The way of Kings",
   "author": "Spielberg",
@@ -46,8 +49,7 @@ const gatekeeper = (req, res, next) => {
 };
 
 
-// Built-in Middleware to handle JSON data from clients
-app.use(express.json());
+
 
 // Another middleware
 app.get('/secret-vault', gatekeeper, (req, res) => {
