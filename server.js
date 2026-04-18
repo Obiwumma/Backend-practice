@@ -3,6 +3,8 @@ require('dotenv').config();
 // 1. Import the express library
 const express = require('express');
 
+const db = require('./db');
+
 // 2. Initialize the application
 const app = express();
 
@@ -79,6 +81,19 @@ app.get('/config', (req, res) => {
     port_used: PORT,
     message: "Secrets are safe!"
   });
+});
+
+app.get('/status', async (req, res) => {
+  try {
+    const result = await db.query('SELECT NOW()');
+    res.json({
+      status: 'Online',
+      serverTime: result.rows[0].now
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Database connection failed' });
+  }
 });
 
 // 5. Start the server
