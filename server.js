@@ -96,6 +96,31 @@ app.get('/status', async (req, res) => {
   }
 });
 
+app.post('/products', async (req, res) => {
+  try {
+    // 1. Get the data from the request body
+    const { name, price, description, quantity } = req.body;
+
+    // 2. Check if the database connection (pool) is actually working
+    // We use $1, $2, etc. to prevent "SQL Injection" (A major security risk)
+    const query = `
+      INSERT INTO products (name, price, description, quantity)
+      VALUES ($1, $2, $3, $4)
+      RETURNING *;
+    `;
+    const values = [name, price, description, quantity];
+    
+    const result = await db.query(query, values);
+    
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    // 3. Log the ACTUAL error to your terminal so you can see it!
+    console.error("DATABASE ERROR:", error.message); 
+    res.status(500).json({ error: error.message }); // Send the real error to Thunder Client for now
+  }
+});
+
+
 // 5. Start the server
 app.listen(PORT, () => {
   console.log(`🚀 Server is running at http://localhost:${PORT}`);
