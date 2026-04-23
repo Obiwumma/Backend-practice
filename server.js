@@ -120,6 +120,73 @@ app.post('/products', async (req, res) => {
   }
 });
 
+app.get('/products', async (req, res) => {
+  try {
+    const result = await db.query('SELECT * FROM products ORDER BY created_at DESC');
+    res.status(200).json(result.rows);
+    // In production, we send an empty array [] if no items exist, 
+    // rather than an error.
+  } catch (error) {
+    console.error("DATABASE ERROR:", error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// The ':id' is a placeholder for whatever number the user types in the URL
+app.get('/products/:id', async (req, res) => {
+  const { id } = req.params; // Extract the ID from the URL
+  try {
+    const result = await db.query('SELECT * FROM products WHERE id = $1', [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/products/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, price, description, quantity } = req.body;
+
+  try {
+    const query = `
+      UPDATE products 
+      SET name = $1, price = $2, description = $3, quantity = $4
+      WHERE id = $5
+      RETURNING *;
+    `;
+    const result = await db.query(query, [name, price, description, quantity, id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Product not found to update" });
+    }
+
+    res.json({ message: "Update successful!", product: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ error: "Update failed" });
+  }
+})
+
+app.delete('/products/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await db.query('DELETE FROM products WHERE id = $1 RETURNING *', [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    res.json({ message: "Product deleted successfully", deletedProduct: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ error: "Delete failed" });
+  }
+});
+
 
 // 5. Start the server
 app.listen(PORT, () => {
