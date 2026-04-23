@@ -5,6 +5,10 @@ const express = require('express');
 
 const db = require('./db');
 
+const jwt = require('jsonwebtoken');
+
+const bcrypt = require('bcrypt')
+
 // 2. Initialize the application
 const app = express();
 
@@ -186,6 +190,42 @@ app.delete('/products/:id', async (req, res) => {
     res.status(500).json({ error: "Delete failed" });
   }
 });
+
+// Working on Authentincation
+
+app.post('/register', async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    // 1. Hash the password
+    // "10" is the salt rounds. It determines how complex the math is.
+    // 10 is the standard balance between security and speed.
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // 2. Save the user to the database
+    const query = `
+      INSERT INTO users (email, password_hash) 
+      VALUES ($1, $2) 
+      RETURNING id, email, role, created_at; 
+      -- Notice we purposefully leave out password_hash in the RETURNING clause!
+    `;
+
+    const result = await db.query(query, [email, hashedPassword])
+
+    res.status(201).json({ 
+      message: "User registered successfully!", 
+      user: result.rows[0] 
+    });
+
+  } catch (error) {
+    // '23505' is the specific PostgreSQL error code for "Unique Violation"
+    if (error.code === '23505') {
+      return res.status(400).json({ error: "An account with this email already exists." });
+    }
+    console.error(error);
+    res.status(500).json({ error: "Registration failed." });
+  }
+})
 
 
 // 5. Start the server
