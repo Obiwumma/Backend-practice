@@ -55,7 +55,30 @@ const gatekeeper = (req, res, next) => {
 };
 
 
+// JWT middleware
 
+const authenticateToken = (req, res, next) => {
+  // 1. Get the token from the request headers
+  // The standard format is: "Bearer <token>"
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Splits "Bearer" and the token
+
+  if (!token) {
+    return res.status(401).json({ error: "Access Denied: No token provided" });
+  }
+
+  // 2. Verify the token using your secret
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) {
+      // If the token is expired or was tampered with by a hacker!
+      return res.status(403).json({ error: "Invalid or expired token" });
+    }
+
+    // 3. Attach the decoded user data to the request so routes can use it
+    req.user = user; 
+    next(); // Let them pass!
+  });
+};
 
 // Another middleware
 app.get('/secret-vault', gatekeeper, (req, res) => {
@@ -226,6 +249,65 @@ app.post('/register', async (req, res) => {
     res.status(500).json({ error: "Registration failed." });
   }
 })
+
+app.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    // 1. Check if the user exists
+    const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+    
+    if (result.rows.length === 0) {
+      // SECURITY TIP: Never say "Email not found". It helps hackers guess emails.
+      // Always use a generic "Invalid credentials".
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    const user = result.rows[0];
+
+    // 2. Check if the password is correct
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+    
+    if (!isMatch) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    // 3. Create the JWT (The Passport)
+    const payload = { userId: user.id, role: user.role };
+    
+    const token = jwt.sign(
+      payload, 
+      process.env.JWT_SECRET, 
+      { expiresIn: '1h' } // The passport expires in 1 hour
+    );
+
+    // 4. Send the token to the user
+    res.json({
+      message: "Login successful!",
+      token: token
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Login failed" });
+  }
+});
+
+//Get profile route 
+
+app.get('/profile', authenticateToken, async (req, res) => {
+  try {
+    // We know req.user.userId exists because our middleware decoded it!
+    const result = await db.query('SELECT id, email, role, created_at FROM users WHERE id = $1', [req.user.userId]);
+    
+    res.json({
+      message: "Welcome to your private profile!",
+      user: result.rows[0]
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch profile" });
+  }
+});
 
 
 // 5. Start the server
