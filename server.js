@@ -97,6 +97,24 @@ app.get('/secret-vault', gatekeeper, (req, res) => {
   res.status(200).json({ "data": "This is top secret gold!" })
 })
 
+// ZOD middleawre
+const validateProduct = (req, res, next) => {
+  try {
+    // Zod tries to fit the request body into the blueprint
+    productSchema.parse(req.body);
+    
+    // If it succeeds, let them pass to the route!
+    next(); 
+  } catch (error) {
+    // If Zod catches an error, it throws an exception.
+    // We catch it and send a 400 Bad Request back to the user.
+    return res.status(400).json({ 
+      error: "Validation failed", 
+      details: error.errors 
+    });
+  }
+};
+
 // 4. Create your first Route (GET request to the home path '/')
 app.get('/', (req, res) => {
   // req = Request (what the client sent)
