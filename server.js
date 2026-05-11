@@ -1,5 +1,6 @@
 require('dotenv').config();
 
+
 // 1. Import the express library
 const express = require('express');
 
@@ -8,6 +9,9 @@ const db = require('./db');
 const jwt = require('jsonwebtoken');
 
 const bcrypt = require('bcrypt')
+
+
+const { z } = require('zod');
 
 // 2. Initialize the application
 const app = express();
@@ -27,6 +31,13 @@ const bookData = {
       "isAvailable": true
     }
 }
+
+const productSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters long"),
+  price: z.number().positive("Price must be a positive number"),
+  description: z.string().optional(), // It's okay if they leave this blank
+  quantity: z.number().int().nonnegative("Quantity cannot be negative")
+});
 
 // This is a custom middleware function
 app.use((req, res, next) => {
