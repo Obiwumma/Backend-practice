@@ -152,7 +152,7 @@ app.get('/status', async (req, res) => {
   }
 });
 
-app.post('/products', async (req, res) => {
+app.post('/products', validateProduct, async (req, res) => {
   try {
     // 1. Get the data from the request body
     const { name, price, description, quantity } = req.body;
