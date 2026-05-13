@@ -284,7 +284,7 @@ app.post('/register', async (req, res) => {
       return res.status(400).json({ error: "An account with this email already exists." });
     }
     console.error(error);
-    res.status(500).json({ error: "Registration failed." });
+    res.status(500).json({ error: error });
   }
 })
 
