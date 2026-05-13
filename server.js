@@ -254,39 +254,76 @@ app.delete('/products/:id', async (req, res) => {
 
 // Working on Authentincation
 
+// app.post('/register', async (req, res) => {
+//   const { name, email, password } = req.body;
+
+//   try {
+//     // 1. Hash the password
+//     // "10" is the salt rounds. It determines how complex the math is.
+//     // 10 is the standard balance between security and speed.
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     // 2. Save the user to the database
+//     const query = `
+//       INSERT INTO users (email, password_hash) 
+//       VALUES ($1, $2) 
+//       RETURNING id, email, created_at; 
+//       -- Notice we purposefully leave out password_hash in the RETURNING clause!
+//     `;
+
+//     const result = await db.query(query, [email, hashedPassword])
+
+//     res.status(201).json({ 
+//       message: "User registered successfully!", 
+//       user: result.rows[0] 
+//     });
+
+//   } catch (error) {
+//     // '23505' is the specific PostgreSQL error code for "Unique Violation"
+//     if (error.code === '23505') {
+//       return res.status(400).json({ error: "An account with this email already exists." });
+//     }
+//     console.error(error);
+//     res.status(500).json({ error: error.message });
+//   }
+// })
+
 app.post('/register', async (req, res) => {
-  const { email, password } = req.body;
+  // 1. Destructure name from the request body
+  const { name, email, password } = req.body;
+
+  // Validate that name is provided
+  if (!name) {
+    return res.status(400).json({ error: "Name is required." });
+  }
 
   try {
-    // 1. Hash the password
-    // "10" is the salt rounds. It determines how complex the math is.
-    // 10 is the standard balance between security and speed.
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 2. Save the user to the database
+    // 2. Add name to the columns and VALUES list
     const query = `
-      INSERT INTO users (email, password_hash) 
-      VALUES ($1, $2) 
-      RETURNING id, email, created_at; 
-      -- Notice we purposefully leave out password_hash in the RETURNING clause!
+      INSERT INTO users (name, email, password_hash) 
+      VALUES ($1, $2, $3) 
+      RETURNING id, name, email; 
     `;
 
-    const result = await db.query(query, [email, hashedPassword])
+    // 3. Pass name as the first parameter ($1)
+    const result = await db.query(query, [name, email, hashedPassword]);
 
     res.status(201).json({ 
       message: "User registered successfully!", 
-      user: result.rows[0] 
+      user: result.rows[0] // Returns the created user object directly
     });
 
   } catch (error) {
-    // '23505' is the specific PostgreSQL error code for "Unique Violation"
     if (error.code === '23505') {
       return res.status(400).json({ error: "An account with this email already exists." });
     }
     console.error(error);
     res.status(500).json({ error: error.message });
   }
-})
+});
+
 
 app.post('/login', loginLimiter, async (req, res) => {
   const { email, password } = req.body;
