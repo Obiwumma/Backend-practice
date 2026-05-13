@@ -267,7 +267,7 @@ app.post('/register', async (req, res) => {
     const query = `
       INSERT INTO users (email, password_hash) 
       VALUES ($1, $2) 
-      RETURNING id, email, role, created_at; 
+      RETURNING id, email, created_at; 
       -- Notice we purposefully leave out password_hash in the RETURNING clause!
     `;
 
