@@ -10,6 +10,7 @@ const jwt = require('jsonwebtoken');
 
 const bcrypt = require('bcrypt')
 
+const rateLimit = require('express-rate-limit');
 
 const { z } = require('zod');
 
@@ -37,6 +38,14 @@ const productSchema = z.object({
   price: z.number().positive("Price must be a positive number"),
   description: z.string().optional(), // It's okay if they leave this blank
   quantity: z.number().int().nonnegative("Quantity cannot be negative")
+});
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 login requests per `window` (here, per 15 minutes)
+  message: { error: "Too many login attempts from this IP, please try again after 15 minutes" },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
 
 // This is a custom middleware function
